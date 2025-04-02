@@ -1,4 +1,4 @@
-package mailService.kninit.Entities;
+package mailService.kninit.Entitie;
 
 import lombok.*;
 import org.bson.types.ObjectId;

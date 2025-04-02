@@ -1,4 +1,4 @@
-package mailService.kninit.Enums;
+package mailService.kninit.Enum;
 
 import lombok.Getter;
 

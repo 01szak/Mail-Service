@@ -1,10 +1,10 @@
-package mailService.kninit;
+package mailService.kninit.Controller;
 
 import lombok.AllArgsConstructor;
-import mailService.kninit.Entities.User;
-import mailService.kninit.Enums.Emails;
-import mailService.kninit.Repositories.UserRepository;
-import mailService.kninit.Services.EmailServiceImpl;
+import mailService.kninit.Entitie.User;
+import mailService.kninit.Enum.Emails;
+import mailService.kninit.Repository.UserRepository;
+import mailService.kninit.Service.EmailServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
