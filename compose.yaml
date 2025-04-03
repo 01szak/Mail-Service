@@ -1,5 +1,4 @@
 services:
-
   app:
     image: 'my-spring-boot-app'
     container_name: 'kninit-spring-boot-app-1'
@@ -8,11 +7,15 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8080:8080"
+    volumes:
+      - './src:/app/src'  # Synchronizacja kodu źródłowego
     restart: 'always'
     environment:
       - 'SPRING_DATA_MONGODB_URI=mongodb://mongodb:27017/mydatabase'
     depends_on:
       - 'mongodb'
+
+    command: ["./app/gradlew", "bootRun"]  # Upewnia się, że aplikacja startuje poprawnie
 
   mongodb:
     image: 'mongo:latest'
@@ -21,3 +24,9 @@ services:
       - 'MONGO_INITDB_DATABASE=mydatabase'
     ports:
       - '27017:27017'
+    volumes:
+      - 'mongodb_data:/data/db'
+    restart: 'always'
+
+volumes:
+  mongodb_data:

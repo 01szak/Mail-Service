@@ -40,6 +40,6 @@ public class testController {
     }
     @GetMapping("/helloWorld")
     public String helloWorld () {
-      return "hello world";
+      return "alalalallal";
     }
 }
