@@ -5,10 +5,10 @@ FROM openjdk:17-jdk-slim AS build
 WORKDIR /app
 
 # Kopiowanie plików Gradle i źródeł aplikacji
-COPY gradlew ./gradlew
+COPY gradlew ./
 COPY gradle ./gradle
-COPY build.gradle ./build.gradle
-COPY settings.gradle ./settings.gradle
+COPY build.gradle ./
+COPY settings.gradle ./
 COPY src ./src
 
 # Instalacja zależności i kompilacja aplikacji
@@ -21,10 +21,10 @@ FROM openjdk:17-jdk-slim
 WORKDIR /app
 
 # Kopiowanie zbudowanego pliku .jar z etapu build
-COPY --from=build /app/build/libs/*.jar app.jar
+COPY --from=build /app/build/libs/mailService-0.0.1-SNAPSHOT.jar app.jar
 
 # Otwieranie portu aplikacji
 EXPOSE 8080
 
 # Ustawienie komendy startowej
-ENTRYPOINT ["java", "-jar", "/build/libs/mailService-0.0.1-SNAPSHOT.jar"]
+ENTRYPOINT ["java", "-jar", "/app/app.jar"]

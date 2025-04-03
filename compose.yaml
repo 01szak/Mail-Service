@@ -10,7 +10,7 @@ services:
       - "8080:8080"
     restart: 'always'
     environment:
-      SPRING_DATASOURCE_URL: 'mongodb://mongodb:27017/mydatabase'
+      - 'SPRING_DATA_MONGODB_URI=mongodb://mongodb:27017/mydatabase'
     depends_on:
       - 'mongodb'
 
@@ -20,5 +20,4 @@ services:
     environment:
       - 'MONGO_INITDB_DATABASE=mydatabase'
     ports:
-    - '27017:27017'
-
+      - '27017:27017'
