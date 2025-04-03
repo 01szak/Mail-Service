@@ -1,5 +1,8 @@
 package mailService.kninit.Service;
 
-public class EmailTemplateService {
+import java.util.Map;
+
+public interface EmailTemplateService {
+    String generateEmail(String templateName, Map<String,Object> variables);
 
 }

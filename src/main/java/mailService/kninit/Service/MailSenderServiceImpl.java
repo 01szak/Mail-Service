@@ -12,15 +12,21 @@ import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
+import java.util.Map;
+
 @Service
 @AllArgsConstructor
-public class EmailServiceImpl implements EmailService {
+public class MailSenderServiceImpl implements MailSenderService {
 
     @Autowired
     private JavaMailSender javaMailSender;
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private EmailTemplateServiceImpl emailTemplateService;
+
 
     public void testSendMail() {
         SimpleMailMessage message = new SimpleMailMessage();
@@ -31,12 +37,21 @@ public class EmailServiceImpl implements EmailService {
         System.out.println("Mail Sent!");
     }
 
+
     @Async
     @Override
     public void sendEmail(Emails from, String subject, String body) {
+        boolean isHtml;
 
         MimeMessage mimeMessage = javaMailSender.createMimeMessage();
 
+        if (body.startsWith("<!DOCTYPE html>")) {
+
+            isHtml = true;
+        } else {
+
+            isHtml = false;
+        }
 
         userRepository.findAll().forEach(user -> {
             try {
@@ -45,17 +60,28 @@ public class EmailServiceImpl implements EmailService {
                 helper.setFrom(from.getEmail());
                 helper.setTo(user.getEmails().get(0));
                 helper.setSubject(subject);
-                helper.setText(body,true);
+                helper.setText(body,isHtml);
                 javaMailSender.send(mimeMessage);
 
             } catch (MessagingException e) {
-
                 throw new RuntimeException(e);
-
             }
 
         });
 
 
+    }
+    public void sendVerificationEmail(Emails from,String subject,String verificationLink) {
+
+        Map<String,Object> variables = Map.of(
+           "VerificationLink", verificationLink
+        );
+
+        String htmlBody = emailTemplateService.generateEmail("icc_account_verification",variables);
+
+        sendEmail(from,subject,htmlBody);
+    }
+    public void sendPlainTextEmail(Emails from,String subject,String text) {
+        sendEmail(from,subject,text);
     }
 }
