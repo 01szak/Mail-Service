@@ -1,4 +1,19 @@
 services:
+
+  app:
+    image: 'my-spring-boot-app'
+    container_name: 'kninit-spring-boot-app-1'
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    restart: 'always'
+    environment:
+      SPRING_DATASOURCE_URL: 'mongodb://mongodb:27017/mydatabase'
+    depends_on:
+      - 'mongodb'
+
   mongodb:
     image: 'mongo:latest'
     container_name: 'kninit-mongodb-1'

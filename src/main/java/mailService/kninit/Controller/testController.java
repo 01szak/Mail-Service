@@ -38,4 +38,8 @@ public class testController {
       System.out.println(emailTemplateRepository.findAll() );
         return emailTemplateRepository.findAll() ;
     }
+    @GetMapping("/helloWorld")
+    public String helloWorld () {
+      return "hello world";
+    }
 }
