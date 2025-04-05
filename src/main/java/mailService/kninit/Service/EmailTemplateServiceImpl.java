@@ -20,22 +20,27 @@ public class EmailTemplateServiceImpl implements EmailTemplateService {
     private EmailTemplateRepository emailTemplateRepository;
 
     private TemplateEngine templateEngine;
+    public record GeneratedEmail(String subject, String htmlBody){}
     @Override
-    public String generateEmail(String templateName, Map<String, Object> variables) throws NullPointerException{
+    public GeneratedEmail generateEmail(String templateName, Map<String, Object> variables) throws NullPointerException{
 
             EmailTemplate rawTemplate = findByTemplateName(templateName);
+
 
             if (rawTemplate == null) {
                 throw new IllegalStateException("Template not found or incorrect template name");
             }
 
             String thymeleafTemplate = convertTemplate(rawTemplate.getTemplateHtmlBody());
+            String thymeleafSubject = convertTemplate(rawTemplate.getSubject());
 
             Context context = new Context();
             context.setVariables(variables);
 
-            return templateEngine.process(thymeleafTemplate, context);
+            String generatedBody = templateEngine.process(thymeleafTemplate, context);
+            String generatedSubject = templateEngine.process(thymeleafSubject, context);
 
+             return new GeneratedEmail(generatedSubject,generatedBody);
     }
     private String convertTemplate(String rawTemplate) {
         return rawTemplate.replaceAll("\\{\\{\\s*\\.?(\\w+)\\s*}}", "\\[\\[\\${$1}\\]\\]");

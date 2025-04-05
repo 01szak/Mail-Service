@@ -76,11 +76,12 @@ public class MailSenderServiceImpl implements MailSenderService {
         );
 
         String templateName = request.personToVerify() instanceof Admin ? "admin_verification": "icc_account_verification";
-        String htmlBody = emailTemplateService.generateEmail(templateName,variables);
+        String htmlBody = emailTemplateService.generateEmail(templateName,variables).htmlBody();
+        String subject = emailTemplateService.generateEmail(templateName,variables).subject();
         EmailTemplate emailTemplate = EmailTemplate.builder()
                 .templateName(templateName)
                 .templateHtmlBody(htmlBody)
-                .subject(request.subject())
+                .subject(subject)
                 .build();
         sendEmail(request.from(),emailTemplate,request.personToVerify());
     }
@@ -96,8 +97,8 @@ public class MailSenderServiceImpl implements MailSenderService {
         if (request.newTemplate() == null && request.templateName() != null) {
 
             emailTemplate.templateName(request.templateName());
-            emailTemplate.subject(emailTemplateService.findByTemplateName(request.templateName()).getSubject());
-            emailTemplate.templateHtmlBody(emailTemplateService.generateEmail(request.templateName(), variables));
+            emailTemplate.subject(emailTemplateService.generateEmail(request.templateName(), variables).subject());
+            emailTemplate.templateHtmlBody(emailTemplateService.generateEmail(request.templateName(), variables).htmlBody());
             emailTemplate.description(emailTemplateService.findByTemplateName(request.templateName()).getDescription());
             emailTemplate.templateAlternateTextBody(emailTemplateService.findByTemplateName(request.templateName()).getTemplateAlternateTextBody());
 
@@ -105,8 +106,8 @@ public class MailSenderServiceImpl implements MailSenderService {
             emailTemplateService.saveTemplate(request.newTemplate());
 
             emailTemplate.templateName(request.newTemplate().templateName());
-            emailTemplate.subject(request.newTemplate().subject());
-            emailTemplate.templateHtmlBody(emailTemplateService.generateEmail(request.newTemplate().templateName(), variables));
+            emailTemplate.subject(emailTemplateService.generateEmail(request.newTemplate().templateName(), variables).subject());
+            emailTemplate.templateHtmlBody(emailTemplateService.generateEmail(request.newTemplate().templateName(), variables).htmlBody());
             emailTemplate.description(request.newTemplate().description());
             emailTemplate.templateAlternateTextBody(request.newTemplate().templateAlternateTextBody());
 
