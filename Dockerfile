@@ -1,27 +1,30 @@
 # Etap budowania
 FROM openjdk:17-jdk-slim AS build
 
+# Ustawienie katalogu roboczego
 WORKDIR /app
 
-# Kopiowanie całego katalogu projektu do kontenera
+# Kopiowanie plików Gradle i źródeł aplikacji
 COPY gradlew ./
 COPY gradle ./gradle
-COPY build.gradle ./build.gradle
+COPY build.gradle ./
+COPY settings.gradle ./
 COPY src ./src
 
-# Nadanie uprawnień do uruchamiania skryptu gradlew
+# Instalacja zależności i kompilacja aplikacji
 RUN chmod +x gradlew && ./gradlew build --no-daemon
-
-
 
 # Etap produkcyjny
 FROM openjdk:17-jdk-slim
 
+# Ustawienie katalogu roboczego
 WORKDIR /app
 
-# Kopiowanie JAR-a z poprzedniego etapu
-COPY --from=build /app/build/libs/*.jar app.jar
+# Kopiowanie zbudowanego pliku .jar z etapu build
+COPY --from=build /app/build/libs/mailService-0.0.1-SNAPSHOT.jar app.jar
 
+# Otwieranie portu aplikacji
 EXPOSE 8080
 
-CMD ["./gradlew", "bootRun"]
+# Ustawienie komendy startowej
+ENTRYPOINT ["java", "-jar", "/app/app.jar"]

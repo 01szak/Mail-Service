@@ -3,29 +3,34 @@ package mailService.kninit.Service;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.AllArgsConstructor;
+import mailService.kninit.Entitie.Admin;
+import mailService.kninit.Entitie.Request;
+import mailService.kninit.Entitie.User;
 import mailService.kninit.Enum.Emails;
-import mailService.kninit.Repository.UserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import mailService.kninit.Repository.AdminRepository;
+import mailService.kninit.Repository.GuestRepository;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Service
 @AllArgsConstructor
 public class MailSenderServiceImpl implements MailSenderService {
 
-    @Autowired
-    private JavaMailSender javaMailSender;
+    private final JavaMailSender javaMailSender;
 
-    @Autowired
-    private UserRepository userRepository;
+    private final GuestRepository guestRepository;
 
-    @Autowired
-    private EmailTemplateServiceImpl emailTemplateService;
+    private final AdminRepository adminRepository;
+
+    private final EmailTemplateServiceImpl emailTemplateService;
 
 
     public void testSendMail() {
@@ -40,7 +45,7 @@ public class MailSenderServiceImpl implements MailSenderService {
 
     @Async
     @Override
-    public void sendEmail(Emails from, String subject, String body) {
+    public void sendEmail(Emails from, String subject, String body, User user) {
         boolean isHtml;
 
         MimeMessage mimeMessage = javaMailSender.createMimeMessage();
@@ -52,8 +57,6 @@ public class MailSenderServiceImpl implements MailSenderService {
 
             isHtml = false;
         }
-
-        userRepository.findAll().forEach(user -> {
             try {
 
                 MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true);
@@ -65,23 +68,55 @@ public class MailSenderServiceImpl implements MailSenderService {
 
             } catch (MessagingException e) {
                 throw new RuntimeException(e);
+            }catch (NullPointerException e ) {
+                System.out.printf("mail was not send to User: %s %s",user.getFirstName(),user.getLastName() );
             }
-
-        });
-
-
     }
-    public void sendVerificationEmail(Emails from,String subject,String verificationLink) {
+    public void sendVerificationEmail(Request.SendVerificationEmailRequest request) {
 
         Map<String,Object> variables = Map.of(
-           "VerificationLink", verificationLink
+           "VerificationLink", request.verificationLink()
         );
 
-        String htmlBody = emailTemplateService.generateEmail("icc_account_verification",variables);
 
-        sendEmail(from,subject,htmlBody);
+        String templateName = request.personToVerify() instanceof Admin ? "admin_verification": "icc_account_verification";
+        String htmlBody = emailTemplateService.generateEmail(templateName,variables);
+
+        sendEmail(request.from(),request.subject(),htmlBody,request.personToVerify());
     }
-    public void sendPlainTextEmail(Emails from,String subject,String text) {
-        sendEmail(from,subject,text);
+    public void sendEmailToAll(String receivingGroup, Request.SendEmailToAllRequest request) {
+        Map<String,Object> variables = new HashMap<>();
+        List<User> to = new ArrayList<>();
+
+//        if(request.newTemplate() != null) {
+//            String htmlBody = request.newTemplate().templateHtmlBody();
+//        }else {
+//            String htmlBody = emailTemplateService.generateEmail(request.templateName(),variables);
+//
+//        }
+
+        for (int i = 1; i < request.dynamicVariables().length + 1; i++) {
+            variables.put("Value_" + String.valueOf(i),request.dynamicVariables()[i - 1]);
+        }
+
+        String htmlBody = emailTemplateService.generateEmail(request.templateName(),variables);
+
+        if (receivingGroup.trim().isEmpty()) {
+            to.addAll(guestRepository.findAll());
+            to.addAll(adminRepository.findAll());
+        } else if (receivingGroup.toLowerCase().trim().equals("admin")) {
+            to.addAll(adminRepository.findAll());
+        }else {
+            to.addAll(guestRepository.findAll());
+        }
+
+
+        to.forEach(u -> {
+            sendEmail(request.from(),request.subject(),htmlBody,u);
+        });
     }
+
+//    public void sendPlainTextEmail(Emails from,String subject,String text) {
+//        sendEmail(from,subject,text);
+//    }
 }
