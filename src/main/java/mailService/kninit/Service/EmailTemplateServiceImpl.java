@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import mailService.kninit.Entitie.EmailTemplate;
 import mailService.kninit.Entitie.Request;
 import mailService.kninit.Repository.EmailTemplateRepository;
+import org.bson.types.ObjectId;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.thymeleaf.TemplateEngine;
@@ -22,21 +23,25 @@ public class EmailTemplateServiceImpl implements EmailTemplateService {
     @Override
     public String generateEmail(String templateName, Map<String, Object> variables) throws NullPointerException{
 
-        EmailTemplate rawTemplate = emailTemplateRepository.findByTemplateName(templateName);
+            EmailTemplate rawTemplate = findByTemplateName(templateName);
 
+            if (rawTemplate == null) {
+                throw new IllegalStateException("Template not found or incorrect template name");
+            }
 
-        String thymeleafTemplate = convertTemplate(rawTemplate.getTemplateHtmlBody());
+            String thymeleafTemplate = convertTemplate(rawTemplate.getTemplateHtmlBody());
 
-        Context context = new Context();
-        context.setVariables(variables);
+            Context context = new Context();
+            context.setVariables(variables);
 
-        return templateEngine.process(thymeleafTemplate, context);
+            return templateEngine.process(thymeleafTemplate, context);
+
     }
-
     private String convertTemplate(String rawTemplate) {
-        return rawTemplate.replaceAll("\\{\\{\\s*\\.([a-zA-Z0-9_]+)\\s*}}", "\\[\\[\\${$1}\\]\\]");
-
+        return rawTemplate.replaceAll("\\{\\{\\s*\\.?(\\w+)\\s*}}", "\\[\\[\\${$1}\\]\\]");
     }
+
+    @Override
     @Transactional
     public void saveTemplate(Request.CreateTemplateRequest request) {
         EmailTemplate.EmailTemplateBuilder builder = EmailTemplate.builder();
@@ -51,5 +56,13 @@ public class EmailTemplateServiceImpl implements EmailTemplateService {
         emailTemplateRepository.save(builder.build());
     }
 
+    @Override
+    public EmailTemplate findById(ObjectId id) {
+        return emailTemplateRepository.findById(id).orElseThrow();
+    }
 
+    @Override
+    public EmailTemplate findByTemplateName(String templateName) {
+        return emailTemplateRepository.findByTemplateName(templateName);
+    }
 }

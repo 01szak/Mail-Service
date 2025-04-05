@@ -4,6 +4,7 @@ import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.AllArgsConstructor;
 import mailService.kninit.Entitie.Admin;
+import mailService.kninit.Entitie.EmailTemplate;
 import mailService.kninit.Entitie.Request;
 import mailService.kninit.Entitie.User;
 import mailService.kninit.Enum.Emails;
@@ -45,74 +46,87 @@ public class MailSenderServiceImpl implements MailSenderService {
 
     @Async
     @Override
-    public void sendEmail(Emails from, String subject, String body, User user) {
-        boolean isHtml;
+    public void sendEmail(Emails from, EmailTemplate emailTemplate, User user) {
 
-        MimeMessage mimeMessage = javaMailSender.createMimeMessage();
-
-        if (body.startsWith("<!DOCTYPE html>")) {
-
-            isHtml = true;
-        } else {
-
-            isHtml = false;
-        }
             try {
-
+                MimeMessage mimeMessage = javaMailSender.createMimeMessage();
                 MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true);
+
+                if (emailTemplate.getTemplateHtmlBody().isEmpty()) {
+                    helper.setText(emailTemplate.getTemplateAlternateTextBody(),false);
+
+                } else {
+                    helper.setText(emailTemplate.getTemplateHtmlBody(),true);
+                }
+
                 helper.setFrom(from.getEmail());
                 helper.setTo(user.getEmails().get(0));
-                helper.setSubject(subject);
-                helper.setText(body,isHtml);
+                helper.setSubject(emailTemplate.getSubject());
                 javaMailSender.send(mimeMessage);
 
             } catch (MessagingException e) {
                 throw new RuntimeException(e);
             }catch (NullPointerException e ) {
-                System.out.printf("mail was not send to User: %s %s",user.getFirstName(),user.getLastName() );
+                System.out.printf("mail was not send to User: %s %s\n",user.getFirstName(),user.getLastName() );
             }
     }
     public void sendVerificationEmail(Request.SendVerificationEmailRequest request) {
-
         Map<String,Object> variables = Map.of(
            "VerificationLink", request.verificationLink()
         );
 
-
         String templateName = request.personToVerify() instanceof Admin ? "admin_verification": "icc_account_verification";
         String htmlBody = emailTemplateService.generateEmail(templateName,variables);
-
-        sendEmail(request.from(),request.subject(),htmlBody,request.personToVerify());
+        EmailTemplate emailTemplate = EmailTemplate.builder()
+                .templateName(templateName)
+                .templateHtmlBody(htmlBody)
+                .subject(request.subject())
+                .build();
+        sendEmail(request.from(),emailTemplate,request.personToVerify());
     }
-    public void sendEmailToAll(String receivingGroup, Request.SendEmailToAllRequest request) {
+    public void sendEmailToAll(List<String> receivingGroups, Request.SendEmailToAllRequest request) {
         Map<String,Object> variables = new HashMap<>();
         List<User> to = new ArrayList<>();
-
-//        if(request.newTemplate() != null) {
-//            String htmlBody = request.newTemplate().templateHtmlBody();
-//        }else {
-//            String htmlBody = emailTemplateService.generateEmail(request.templateName(),variables);
-//
-//        }
+        EmailTemplate.EmailTemplateBuilder emailTemplate = EmailTemplate.builder();
 
         for (int i = 1; i < request.dynamicVariables().length + 1; i++) {
             variables.put("Value_" + String.valueOf(i),request.dynamicVariables()[i - 1]);
         }
 
-        String htmlBody = emailTemplateService.generateEmail(request.templateName(),variables);
+        if (request.newTemplate() == null && request.templateName() != null) {
 
-        if (receivingGroup.trim().isEmpty()) {
+            emailTemplate.templateName(request.templateName());
+            emailTemplate.subject(emailTemplateService.findByTemplateName(request.templateName()).getSubject());
+            emailTemplate.templateHtmlBody(emailTemplateService.generateEmail(request.templateName(), variables));
+            emailTemplate.description(emailTemplateService.findByTemplateName(request.templateName()).getDescription());
+            emailTemplate.templateAlternateTextBody(emailTemplateService.findByTemplateName(request.templateName()).getTemplateAlternateTextBody());
+
+        } else if (request.newTemplate() != null && request.templateName() == null) {
+            emailTemplateService.saveTemplate(request.newTemplate());
+
+            emailTemplate.templateName(request.newTemplate().templateName());
+            emailTemplate.subject(request.newTemplate().subject());
+            emailTemplate.templateHtmlBody(emailTemplateService.generateEmail(request.newTemplate().templateName(), variables));
+            emailTemplate.description(request.newTemplate().description());
+            emailTemplate.templateAlternateTextBody(request.newTemplate().templateAlternateTextBody());
+
+        } else if (request.newTemplate() != null && request.templateName() != null) {
+            throw new IllegalStateException("Two templates have been selected");
+        } else {
+            throw new IllegalStateException("Chose or create template");
+        }
+
+        if (receivingGroups.isEmpty()) {
             to.addAll(guestRepository.findAll());
             to.addAll(adminRepository.findAll());
-        } else if (receivingGroup.toLowerCase().trim().equals("admin")) {
+        } else if (receivingGroups.size() == 1 && receivingGroups.contains("admin")) {
             to.addAll(adminRepository.findAll());
-        }else {
+        }else if (receivingGroups.size() == 1 && receivingGroups.contains("guest")){
             to.addAll(guestRepository.findAll());
         }
 
-
         to.forEach(u -> {
-            sendEmail(request.from(),request.subject(),htmlBody,u);
+            sendEmail(request.from(), emailTemplate.build(),u);
         });
     }
 
