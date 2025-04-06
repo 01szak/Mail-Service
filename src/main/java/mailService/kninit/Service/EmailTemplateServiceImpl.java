@@ -63,6 +63,12 @@ public class EmailTemplateServiceImpl implements EmailTemplateService {
     }
 
     @Override
+    @Transactional
+    public void deleteById(ObjectId id) {
+        emailTemplateRepository.deleteById(id);
+    }
+
+    @Override
     public EmailTemplate findByTemplateName(String templateName) {
         return emailTemplateRepository.findByTemplateName(templateName);
     }

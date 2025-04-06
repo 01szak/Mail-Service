@@ -10,13 +10,15 @@ import mailService.kninit.Entitie.User;
 import mailService.kninit.Enum.Emails;
 import mailService.kninit.Repository.AdminRepository;
 import mailService.kninit.Repository.GuestRepository;
-import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Service
 @AllArgsConstructor
@@ -30,21 +32,9 @@ public class MailSenderServiceImpl implements MailSenderService {
 
     private final EmailTemplateServiceImpl emailTemplateService;
 
-
-    public void testSendMail() {
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setTo("test@example.com");
-        message.setSubject("Test Mail");
-        message.setText("Hello from Spring Boot!");
-        javaMailSender.send(message);
-        System.out.println("Mail Sent!");
-    }
-
-
     @Async
     @Override
     public void sendEmail(Emails from, EmailTemplate emailTemplate, User user) {
-
             try {
                 MimeMessage mimeMessage = javaMailSender.createMimeMessage();
                 MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true);
@@ -71,7 +61,6 @@ public class MailSenderServiceImpl implements MailSenderService {
         Map<String,Object> variables = Map.of(
            "Value_1", request.verificationLink()
         );
-
         String templateName = request.personToVerify() instanceof Admin ? "admin_verification": "icc_account_verification";
         String htmlBody = emailTemplateService.generateEmail(emailTemplateService.findByTemplateName(templateName),variables).htmlBody();
         String subject = emailTemplateService.generateEmail(emailTemplateService.findByTemplateName(templateName),variables).subject();
@@ -84,38 +73,40 @@ public class MailSenderServiceImpl implements MailSenderService {
     }
     public void sendEmailToAll(List<String> receivingGroups, Request.SendEmailToAllRequest request) {
         Map<String,Object> variables = new HashMap<>();
-//        EmailTemplate.EmailTemplateBuilder emailTemplate = EmailTemplate.builder();
-
         List<User> to = chooseUsersToReceiveEmail(receivingGroups);
 
         if (request.newTemplate() != null ) {
-            emailTemplateService.saveTemplate(request.newTemplate());
+            if (emailTemplateService.findByTemplateName(request.newTemplate().templateName()) != null) {
+                throw new IllegalStateException("Template with this name already exist");
+            }else {
+                emailTemplateService.saveTemplate(request.newTemplate());
+            }
         }
 
         for( User u : to ) {
         EmailTemplate emailTemplate = new EmailTemplate();
+                if (request.newTemplate() == null && request.templateName() != null) {
+                    emailTemplate = emailTemplateService.findByTemplateName(request.templateName());
 
-        if (request.newTemplate() == null && request.templateName() != null) {
-            emailTemplate = emailTemplateService.findByTemplateName(request.templateName());
+                    variables = setVariables(request.dynamicVariables(), emailTemplate.getTemplateHtmlBody(), emailTemplate.getSubject(), u);
 
-            variables = setVariables(request.dynamicVariables(),emailTemplate.getTemplateHtmlBody(),emailTemplate.getSubject(),u);
+                    emailTemplate.setSubject(emailTemplateService.generateEmail(emailTemplate, variables).subject());
+                    emailTemplate.setTemplateHtmlBody(emailTemplateService.generateEmail(emailTemplate, variables).htmlBody());
 
-            emailTemplate.setSubject(emailTemplateService.generateEmail(emailTemplate, variables).subject());
-            emailTemplate.setTemplateHtmlBody(emailTemplateService.generateEmail(emailTemplate, variables).htmlBody());
+                } else if (request.newTemplate() != null && request.templateName() == null) {
 
-        } else if (request.newTemplate() != null && request.templateName() == null) {
+                    emailTemplate = emailTemplateService.findByTemplateName(request.newTemplate().templateName());
 
-            emailTemplate = emailTemplateService.findByTemplateName(request.newTemplate().templateName());
+                    variables = setVariables(request.dynamicVariables(), emailTemplate.getTemplateHtmlBody(), emailTemplate.getSubject(), u);
+                    emailTemplate.setSubject(emailTemplateService.generateEmail(emailTemplate, variables).subject());
+                    emailTemplate.setTemplateHtmlBody(emailTemplateService.generateEmail(emailTemplate, variables).htmlBody());
 
-            variables = setVariables(request.dynamicVariables(),emailTemplate.getTemplateHtmlBody(),emailTemplate.getSubject(),u);
-            emailTemplate.setSubject(emailTemplateService.generateEmail(emailTemplate, variables).subject());
-            emailTemplate.setTemplateHtmlBody(emailTemplateService.generateEmail(emailTemplate, variables).htmlBody());
-
-        } else if (request.newTemplate() != null && request.templateName() != null) {
-            throw new IllegalStateException("Two templates have been selected");
-        } else {
-            throw new IllegalStateException("Chose or create template");
-        }
+                } else if (request.newTemplate() != null && request.templateName() != null) {
+                    emailTemplateService.deleteById(emailTemplateService.findByTemplateName(request.newTemplate().templateName()).getId());
+                    throw new IllegalStateException("Two templates have been selected");
+                } else {
+                    throw new IllegalStateException("Chose or create template");
+                }
             sendEmail(request.from(), emailTemplate,u);
         };
     }
@@ -148,7 +139,4 @@ public class MailSenderServiceImpl implements MailSenderService {
         }
         return to;
     }
-//    public void sendPlainTextEmail(Emails from,String subject,String text) {
-//        sendEmail(from,subject,text);
-//    }
 }

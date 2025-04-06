@@ -14,4 +14,6 @@ public interface EmailTemplateService {
     void saveTemplate(Request.CreateTemplateRequest request);
 
     EmailTemplate findById(ObjectId id);
+
+    void deleteById(ObjectId id);
 }
