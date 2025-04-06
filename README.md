@@ -114,11 +114,9 @@ docker-compose up --build
 
 ---
 
-## 📸 Visuals
-
-![Zrzut ekranu 2025-04-06 141920](https://github.com/user-attachments/assets/3d1a77eb-d846-4d54-baf9-d1c753a5a411)
-
-![Zrzut ekranu 2025-04-06 144346](https://github.com/user-attachments/assets/f852bc45-30c1-4883-8230-48fd4fa7e9de)
+![Zrzut ekranu 2025-04-06 150811](https://github.com/user-attachments/assets/60cf1c71-0f8b-406c-8fac-25171b4aa4f1)
+![Zrzut ekranu 2025-04-06 150900](https://github.com/user-attachments/assets/4f28db45-0889-4325-acc3-186035ba478a)
+![Zrzut ekranu 2025-04-06 151053](https://github.com/user-attachments/assets/0aaa9034-5302-44ba-9c18-b21d72a52347)
 
 ---
 
