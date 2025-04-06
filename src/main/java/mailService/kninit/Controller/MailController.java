@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import mailService.kninit.Entitie.Request;
 import mailService.kninit.Service.MailSenderServiceImpl;
 import mailService.kninit.Service.ScheduleServiceImpl;
+import org.bson.types.ObjectId;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -39,4 +40,10 @@ public class MailController {
         scheduleService.scheduleEmail(receivingGroups,date,request);
         return ResponseEntity.ok().build();
     }
+    @DeleteMapping("/schedule/delete/{id}")
+    public ResponseEntity deleteSchedule(@Parameter(description = "Schedule Id") @PathVariable("id")ObjectId id) {
+        scheduleService.deleteScheduleByScheduleId(id);
+        return ResponseEntity.ok().build();
+    }
+
 }

@@ -6,6 +6,7 @@ import mailService.kninit.Entitie.Request;
 import mailService.kninit.Entitie.Schedule;
 import mailService.kninit.Enum.ScheduleStatus;
 import mailService.kninit.Repository.ScheduleRepository;
+import org.bson.types.ObjectId;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -92,5 +93,10 @@ public class ScheduleServiceImpl implements ScheduleService {
             }
         });
 
+    }
+
+    @Override
+    public void deleteScheduleByScheduleId(ObjectId id) {
+        scheduleRepository.deleteById(id);
     }
 }
