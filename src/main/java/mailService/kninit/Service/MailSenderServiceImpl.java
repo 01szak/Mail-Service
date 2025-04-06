@@ -69,7 +69,7 @@ public class MailSenderServiceImpl implements MailSenderService {
     }
     public void sendVerificationEmail(Request.SendVerificationEmailRequest request) {
         Map<String,Object> variables = Map.of(
-           "VerificationLink", request.verificationLink()
+           "Value_1", request.verificationLink()
         );
 
         String templateName = request.personToVerify() instanceof Admin ? "admin_verification": "icc_account_verification";
