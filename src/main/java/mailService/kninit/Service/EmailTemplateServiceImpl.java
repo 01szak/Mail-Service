@@ -22,11 +22,7 @@ public class EmailTemplateServiceImpl implements EmailTemplateService {
     private TemplateEngine templateEngine;
     public record GeneratedEmail(String subject, String htmlBody){}
     @Override
-    public GeneratedEmail generateEmail(String templateName, Map<String, Object> variables) throws NullPointerException{
-
-            EmailTemplate rawTemplate = findByTemplateName(templateName);
-
-
+    public GeneratedEmail generateEmail(EmailTemplate rawTemplate, Map<String, Object> variables) throws NullPointerException{
             if (rawTemplate == null) {
                 throw new IllegalStateException("Template not found or incorrect template name");
             }

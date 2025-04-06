@@ -7,7 +7,7 @@ import org.bson.types.ObjectId;
 import java.util.Map;
 
 public interface EmailTemplateService {
-    EmailTemplateServiceImpl.GeneratedEmail generateEmail(String templateName, Map<String, Object> variables);
+    EmailTemplateServiceImpl.GeneratedEmail generateEmail(EmailTemplate rawTemplate, Map<String, Object> variables);
 
     EmailTemplate findByTemplateName(String templateName);
 

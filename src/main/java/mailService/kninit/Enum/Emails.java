@@ -4,9 +4,9 @@ import lombok.Getter;
 
 @Getter
 public enum Emails {
-    KONTAKT("kontakt@hackarena.pl", "Dupadupa1@"),
-    EVENT("event@hackarena.pl", "Dupadupa1@"),
-    WSPÓŁPRACA("wspolpraca@hackarena.pl", "Dupadupa1@");
+    KONTAKT("kontakt@hackarena.pl", "password"),
+    EVENT("event@hackarena.pl", "password"),
+    WSPÓŁPRACA("wspolpraca@hackarena.pl", "password");
 
     private final String email;
 
@@ -16,6 +16,4 @@ public enum Emails {
         this.email = email;
         this.password = password;
     }
-
-
 }

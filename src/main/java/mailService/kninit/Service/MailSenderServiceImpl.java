@@ -16,10 +16,7 @@ import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Service
 @AllArgsConstructor
@@ -76,8 +73,8 @@ public class MailSenderServiceImpl implements MailSenderService {
         );
 
         String templateName = request.personToVerify() instanceof Admin ? "admin_verification": "icc_account_verification";
-        String htmlBody = emailTemplateService.generateEmail(templateName,variables).htmlBody();
-        String subject = emailTemplateService.generateEmail(templateName,variables).subject();
+        String htmlBody = emailTemplateService.generateEmail(emailTemplateService.findByTemplateName(templateName),variables).htmlBody();
+        String subject = emailTemplateService.generateEmail(emailTemplateService.findByTemplateName(templateName),variables).subject();
         EmailTemplate emailTemplate = EmailTemplate.builder()
                 .templateName(templateName)
                 .templateHtmlBody(htmlBody)
@@ -87,36 +84,60 @@ public class MailSenderServiceImpl implements MailSenderService {
     }
     public void sendEmailToAll(List<String> receivingGroups, Request.SendEmailToAllRequest request) {
         Map<String,Object> variables = new HashMap<>();
-        List<User> to = new ArrayList<>();
-        EmailTemplate.EmailTemplateBuilder emailTemplate = EmailTemplate.builder();
+//        EmailTemplate.EmailTemplateBuilder emailTemplate = EmailTemplate.builder();
 
-        for (int i = 1; i < request.dynamicVariables().length + 1; i++) {
-            variables.put("Value_" + String.valueOf(i),request.dynamicVariables()[i - 1]);
+        List<User> to = chooseUsersToReceiveEmail(receivingGroups);
+
+        if (request.newTemplate() != null ) {
+            emailTemplateService.saveTemplate(request.newTemplate());
         }
 
-        if (request.newTemplate() == null && request.templateName() != null) {
+        for( User u : to ) {
+        EmailTemplate emailTemplate = new EmailTemplate();
 
-            emailTemplate.templateName(request.templateName());
-            emailTemplate.subject(emailTemplateService.generateEmail(request.templateName(), variables).subject());
-            emailTemplate.templateHtmlBody(emailTemplateService.generateEmail(request.templateName(), variables).htmlBody());
-            emailTemplate.description(emailTemplateService.findByTemplateName(request.templateName()).getDescription());
-            emailTemplate.templateAlternateTextBody(emailTemplateService.findByTemplateName(request.templateName()).getTemplateAlternateTextBody());
+        if (request.newTemplate() == null && request.templateName() != null) {
+            emailTemplate = emailTemplateService.findByTemplateName(request.templateName());
+
+            variables = setVariables(request.dynamicVariables(),emailTemplate.getTemplateHtmlBody(),emailTemplate.getSubject(),u);
+
+            emailTemplate.setSubject(emailTemplateService.generateEmail(emailTemplate, variables).subject());
+            emailTemplate.setTemplateHtmlBody(emailTemplateService.generateEmail(emailTemplate, variables).htmlBody());
 
         } else if (request.newTemplate() != null && request.templateName() == null) {
-            emailTemplateService.saveTemplate(request.newTemplate());
 
-            emailTemplate.templateName(request.newTemplate().templateName());
-            emailTemplate.subject(emailTemplateService.generateEmail(request.newTemplate().templateName(), variables).subject());
-            emailTemplate.templateHtmlBody(emailTemplateService.generateEmail(request.newTemplate().templateName(), variables).htmlBody());
-            emailTemplate.description(request.newTemplate().description());
-            emailTemplate.templateAlternateTextBody(request.newTemplate().templateAlternateTextBody());
+            emailTemplate = emailTemplateService.findByTemplateName(request.newTemplate().templateName());
+
+            variables = setVariables(request.dynamicVariables(),emailTemplate.getTemplateHtmlBody(),emailTemplate.getSubject(),u);
+            emailTemplate.setSubject(emailTemplateService.generateEmail(emailTemplate, variables).subject());
+            emailTemplate.setTemplateHtmlBody(emailTemplateService.generateEmail(emailTemplate, variables).htmlBody());
 
         } else if (request.newTemplate() != null && request.templateName() != null) {
             throw new IllegalStateException("Two templates have been selected");
         } else {
             throw new IllegalStateException("Chose or create template");
         }
+            sendEmail(request.from(), emailTemplate,u);
+        };
+    }
+    private Map<String, Object> setVariables (String[] dynamicVariables, String templateHtmlBody,String subject,User u ) {
+        Map<String,Object> variables = new HashMap<>();
 
+        for (int i = 1; i < dynamicVariables.length + 1; i++) {
+            variables.put("Value_" + String.valueOf(i),dynamicVariables[i - 1]);
+        }
+        if (templateHtmlBody.contains("{{firstname}}") || subject.contains("{{firstname}}")) {
+            variables.put("firstname", u.getFirstName());
+        }
+        if(templateHtmlBody.contains("{{lastname}}") || subject.contains("{{lastname}}")) {
+            variables.put("lastname", u.getLastName());
+        }
+        if (templateHtmlBody.contains("{{email}}") || subject.contains("{{email}}")) {
+            variables.put("email", u.getEmails().get(0));
+        }
+        return variables;
+    }
+    private List<User> chooseUsersToReceiveEmail (List<String> receivingGroups) {
+        List<User> to = new ArrayList<>();
         if (receivingGroups.isEmpty()) {
             to.addAll(guestRepository.findAll());
             to.addAll(adminRepository.findAll());
@@ -125,12 +146,8 @@ public class MailSenderServiceImpl implements MailSenderService {
         }else if (receivingGroups.size() == 1 && receivingGroups.contains("guest")){
             to.addAll(guestRepository.findAll());
         }
-
-        to.forEach(u -> {
-            sendEmail(request.from(), emailTemplate.build(),u);
-        });
+        return to;
     }
-
 //    public void sendPlainTextEmail(Emails from,String subject,String text) {
 //        sendEmail(from,subject,text);
 //    }

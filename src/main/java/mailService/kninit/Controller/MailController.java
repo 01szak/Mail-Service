@@ -39,10 +39,4 @@ public class MailController {
         scheduleService.scheduleEmail(receivingGroups,date,request);
         return ResponseEntity.ok().build();
     }
-
-//    @PostMapping("/sendPlainTextEmail")
-//    public void sendPlainTextEmail (@RequestBody Request.SendPlainTextEmailRequest request) {
-//        emailService.sendPlainTextEmail(request.from(), request.subject(),request.body());
-//    }
-
 }
