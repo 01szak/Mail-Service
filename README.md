@@ -68,9 +68,10 @@ Saves a new email template to the database.
 }
 ```
 
-📋 **Note:** To choose between a new or an existing template, set one of the fields (`templateName` or `newTemplate`) to `null`.  
-`templateName` corresponds to the `template_name` column in the database.
-
+📋 **Note:** 
+- To choose between a new or an existing template, set one of the fields (`templateName` or `newTemplate`) to `null`.  
+- `templateName` corresponds to the `template_name` column in the database.
+- dynamic variables in html body should be named as Value_1, Value_2 etc. and values in dynamicVariables should be placed in order (e.g. dynamicVariables[0] for Value_1)
 📌 **Important:** The `from` field is an enum that includes both the email address and password – typing an email manually **will not work**.
 
 ---
@@ -117,6 +118,8 @@ docker-compose up --build
 ![Zrzut ekranu 2025-04-06 150811](https://github.com/user-attachments/assets/60cf1c71-0f8b-406c-8fac-25171b4aa4f1)
 ![Zrzut ekranu 2025-04-06 150900](https://github.com/user-attachments/assets/4f28db45-0889-4325-acc3-186035ba478a)
 ![Zrzut ekranu 2025-04-06 151053](https://github.com/user-attachments/assets/0aaa9034-5302-44ba-9c18-b21d72a52347)
+![image](https://github.com/user-attachments/assets/da3e907e-6cd7-4d3b-8c54-5e9f225cce13)
+
 
 ---
 
