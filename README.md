@@ -69,9 +69,10 @@ Saves a new email template to the database.
 ```
 
 📋 **Note:** 
-- To choose between a new or an existing template, set one of the fields (`templateName` or `newTemplate`) to `null`.  
-- `templateName` corresponds to the `template_name` column in the database.
-- dynamic variables in html body should be named as Value_1, Value_2 etc. and values in dynamicVariables should be placed in order (e.g. dynamicVariables[0] for Value_1)
+- To choose between a new or an existing template, set one of the fields (templateName or newTemplate) to null.
+- templateName corresponds to the template_name column in the database.
+- To include firstname, lastname, and email without typing them into dynamicVariables, annotate dynamic variables as {{firstname}}, {{lastname}}, and {{email}}.
+- Dynamic variables in the HTML body should be named Value_1, Value_2, etc., and the corresponding values in dynamicVariables should be placed in order (e.g., dynamicVariables[0] for Value_1).
 📌 **Important:** The `from` field is an enum that includes both the email address and password – typing an email manually **will not work**.
 
 ---
